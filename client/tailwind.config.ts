@@ -1,0 +1,111 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        navy: {
+          DEFAULT: '#0B1B33',
+          50: '#E8EFFA',
+          100: '#C4D6EE',
+          200: '#8FB0D8',
+          300: '#5C88BD',
+          400: '#2F5F97',
+          500: '#16395F',
+          600: '#0F2A4A',
+          700: '#0C2340',
+          800: '#091B32',
+          900: '#061224',
+        },
+        charcoal: {
+          DEFAULT: '#1E242E',
+          50: '#F4F5F7',
+          100: '#E3E6EA',
+          200: '#C5CBD4',
+          300: '#A2AAB8',
+          400: '#7B8495',
+          500: '#5A6374',
+          600: '#3E4654',
+          700: '#2C333F',
+          800: '#222830',
+          900: '#151A21',
+        },
+        ink: '#0E1420',
+        accent: {
+          DEFAULT: '#0EA5E9',
+          50: '#ECFEFF',
+          100: '#CFFAFE',
+          200: '#A5F3FC',
+          300: '#67E8F9',
+          400: '#22D3EE',
+          500: '#06B6D4',
+          600: '#0891B2',
+          700: '#0E7490',
+        },
+        verified: {
+          DEFAULT: '#10B981',
+          50: '#ECFDF5',
+          100: '#D1FAE5',
+          400: '#34D399',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+        },
+        warn: {
+          DEFAULT: '#F59E0B',
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          700: '#B45309',
+        },
+        conflict: {
+          DEFAULT: '#EF4444',
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          400: '#F87171',
+          500: '#EF4444',
+          700: '#B91C1C',
+        },
+        miss: {
+          DEFAULT: '#94A3B8',
+          300: '#CBD5E1',
+          500: '#94A3B8',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
+      },
+      keyframes: {
+        'pulse-dot': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.35' },
+        },
+        'flow-dash': {
+          '0%': { strokeDashoffset: '18' },
+          '100%': { strokeDashoffset: '0' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        sweep: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(300%)' },
+        },
+      },
+      animation: {
+        'pulse-dot': 'pulse-dot 1.6s ease-in-out infinite',
+        shimmer: 'shimmer 2.2s linear infinite',
+      },
+      boxShadow: {
+        soft: '0 1px 2px rgba(11,27,51,0.06), 0 4px 16px rgba(11,27,51,0.08)',
+        panel: '0 1px 3px rgba(11,27,51,0.08), 0 12px 32px rgba(11,27,51,0.10)',
+        glow: '0 0 0 1px rgba(14,165,233,0.25), 0 0 24px rgba(14,165,233,0.18)',
+      },
+    },
+  },
+  plugins: [],
+};

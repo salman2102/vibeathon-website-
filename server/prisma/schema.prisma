@@ -1,0 +1,274 @@
+// ClearGov AI — Prisma schema (PostgreSQL / PostGIS-ready)
+// The reference deployment targets PostgreSQL. At runtime ClearGov ships with
+// a self-contained Demo Store fallback so the application is fully runnable
+// without a database (see server/src/store/demoStore.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  REVIEWER
+  ADMIN
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  ANALYZING
+  ADDITIONAL_EVIDENCE_REQUIRED
+  HUMAN_REVIEW_REQUIRED
+  CONDITION_NOT_ESTABLISHED
+  READY_TO_PROCEED
+  RESOLVED
+}
+
+enum RequirementStatus {
+  ESTABLISHED
+  NOT_ESTABLISHED
+  MISSING_EVIDENCE
+  CONFLICT
+  LOW_CONFIDENCE
+  HUMAN_REVIEW
+}
+
+enum IssueSeverity {
+  INFO
+  WARNING
+  CONFLICT
+  CRITICAL
+}
+
+enum IssueType {
+  NAME_MISMATCH
+  ADDRESS_MISMATCH
+  INCOME_MISMATCH
+  DATE_MISMATCH
+  EXPIRED_DOCUMENT
+  DUPLICATE_EVIDENCE
+  MISSING_FIELD
+  UNREADABLE_EVIDENCE
+  UNSUPPORTED_DOCUMENT_TYPE
+  CONFLICTING_INFORMATION
+  MISSING_EVIDENCE
+  INVALID_DOCUMENT
+  LOW_QUALITY
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  role         Role        @default(CITIZEN)
+  department   String?
+  createdAt    DateTime    @default(now())
+  applications Application[]
+  reviewActions ReviewAction[]
+  auditEvents  AuditEvent[]
+  notifications Notification[]
+}
+
+model Scenario {
+  id           String        @id @default(cuid())
+  key          String        @unique
+  name         String
+  description  String
+  active       Boolean       @default(true)
+  requirements ScenarioRequirement[]
+  applications Application[]
+}
+
+model ScenarioRequirement {
+  id           String      @id @default(cuid())
+  scenarioId   String
+  scenario     Scenario    @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  key          String
+  label        String
+  description  String
+  minConfidence Float
+  ruleType     String
+  rulePayload  Json
+  position     Int         @default(0)
+}
+
+model Application {
+  id            String          @id @default(cuid())
+  applicationId String          @unique // public reference e.g. CG-2026-0148
+  scenarioId    String
+  scenario      Scenario        @relation(fields: [scenarioId], references: [id])
+  userId        String?
+  user          User?           @relation(fields: [userId], references: [id])
+  applicantName String
+  status        ApplicationStatus @default(DRAFT)
+  submittedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  claims        Json
+  evidence      Evidence[]
+  facts         ExtractedFact[]
+  assessments   Assessment[]
+  issues        Issue[]
+  decisions     Decision[]
+  nextActions   NextAction[]
+  reviewActions ReviewAction[]
+  auditEvents   AuditEvent[]
+  notifications Notification[]
+}
+
+model Evidence {
+  id             String            @id @default(cuid())
+  applicationId  String
+  application    Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fileName       String
+  mimeType       String
+  fileType       String // pdf | png | jpg | jpeg
+  fileSize       Int
+  status         String            @default("PROCESSING")
+  ocrText        String?
+  quality        Int?
+  processedAt    DateTime?
+  uploadedById   String?
+  versions       EvidenceVersion[]
+  facts          ExtractedFact[]
+  assessments    Assessment[]
+  issues         Issue[]
+  createdAt      DateTime          @default(now())
+}
+
+model EvidenceVersion {
+  id             String      @id @default(cuid())
+  evidenceId     String
+  evidence       Evidence    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  version        Int
+  fileName       String?
+  extractedFields Json
+  confidence     Json
+  pendingFieldsChange Json
+  changedBy      String?
+  note           String?
+  createdAt      DateTime    @default(now())
+}
+
+model ExtractedFact {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  evidenceId    String
+  evidence      Evidence    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  key           String
+  label         String
+  value         String
+  confidence    Float
+  sourcePage    Int?
+}
+
+model Assessment {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  requirementKey String
+  requirementLabel String
+  result        RequirementStatus
+  confidence    Float
+  explanation   String
+  evidenceId    String?
+  evidence      Evidence?   @relation(fields: [evidenceId], references: [id])
+  createdAt     DateTime    @default(now())
+}
+
+model Issue {
+  id             String       @id @default(cuid())
+  applicationId  String
+  application    Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type           IssueType
+  severity       IssueSeverity
+  title          String
+  explanation    String
+  confidence     Float
+  status         String       @default("OPEN")
+  evidenceId     String?
+  evidence       Evidence?    @relation(fields: [evidenceId], references: [id])
+  requirementKey String?
+  recommendation String
+  resolved       Boolean      @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+}
+
+model Decision {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  title         String
+  summary       String
+  aiConfidence  Float
+  createdAt     DateTime        @default(now())
+}
+
+model NextAction {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  key           String
+  title         String
+  priority      Int
+  reason        String
+  prompt        String
+  done          Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model Reviewer {
+  id       String @id @default(cuid())
+  userId   String @unique
+  scope    String
+}
+
+model ReviewAction {
+  id             String      @id @default(cuid())
+  applicationId  String
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type           String
+  note           String?
+  reason         String?
+  actorId        String
+  actor          User        @relation(fields: [actorId], references: [id])
+  previousStatus ApplicationStatus
+  newStatus      ApplicationStatus
+  createdAt      DateTime    @default(now())
+}
+
+model AuditEvent {
+  id             String      @id @default(cuid())
+  applicationId  String
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor          String
+  role           String
+  action         String
+  timestamp      DateTime    @default(now())
+  reason         String?
+  previousState  String?
+  newState       String?
+  details        Json?
+}
+
+model Notification {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id])
+  type          String
+  title         String
+  message       String
+  read          Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
